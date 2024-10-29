@@ -166,4 +166,18 @@
         app:srcCompat="@drawable/ic_pc"
         tools:ignore="ContentDescription,SpeakableTextPresentCheck" />
 
+    <ImageButton
+        android:id="@+id/btnCamera"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/btn_camera_bg"
+        android:scaleType="centerInside"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_camera"
+        app:layout_constraintBottom_toBottomOf="@+id/sceneView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="ContentDescription" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

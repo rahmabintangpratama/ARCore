@@ -1,12 +1,23 @@
 package com.uinsuka.arcore
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.widget.ImageButton
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.ar.core.Config
 import io.github.sceneview.ar.ArSceneView
@@ -15,6 +26,11 @@ import io.github.sceneview.math.Position
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private lateinit var sceneView: ArSceneView
@@ -46,6 +62,7 @@ class MainActivity : AppCompatActivity() {
 
         setupFabListeners()
         setupTapListener()
+        setupCameraButton()
     }
 
     private fun setupFabListeners() {
@@ -127,6 +144,103 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupCameraButton() {
+        findViewById<ImageButton>(R.id.btnCamera).setOnClickListener {
+            if (checkPermissions()) {
+                takeScreenshot()
+            } else {
+                requestPermissions()
+            }
+        }
+    }
+
+    private fun checkPermissions(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestPermissions() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.CAMERA),
+            REQUEST_PERMISSIONS
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_PERMISSIONS) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                takeScreenshot()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Izin kamera diperlukan untuk mengambil gambar",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun takeScreenshot() {
+        try {
+            sceneView.getBitmap { bitmap ->
+                if (bitmap != null) {
+                    // Simpan bitmap
+                    saveBitmap(bitmap)
+                    // Tampilkan toast success
+                    Toast.makeText(this, "Gambar berhasil disimpan", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Gagal mengambil gambar", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error taking screenshot: ${e.message}")
+            Toast.makeText(this, "Gagal mengambil gambar", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveBitmap(bitmap: Bitmap) {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val filename = "AR_Screenshot_$timestamp.jpg"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveImageInQ(bitmap, filename)
+        } else {
+            saveImageInLegacy(bitmap, filename)
+        }
+    }
+
+    @Suppress("NAME_SHADOWING")
+    private fun saveImageInQ(bitmap: Bitmap, filename: String) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        uri?.let { uri ->
+            contentResolver.openOutputStream(uri)?.use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            }
+        }
+    }
+
+    private fun saveImageInLegacy(bitmap: Bitmap, filename: String) {
+        val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val image = File(imagesDir, filename)
+        FileOutputStream(image).use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        }
+    }
+
     private fun handleTap(x: Float, y: Float): Boolean {
         return try {
             val hitResult = sceneView.hitTest(
@@ -189,5 +303,10 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e("AR_DEBUG", "Error on destroy: ${e.message}")
         }
+    }
+
+    companion object {
+        private const val REQUEST_PERMISSIONS = 1001
+        private const val TAG = "MainActivity"
     }
 }
