@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sceneView: ArSceneView
     private var currentModelNode: ArModelNode? = null
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private var areFabsVisible = false
 
     // Mapping FAB IDs to model resources
     private val modelMap = mapOf(
@@ -71,6 +73,52 @@ class MainActivity : AppCompatActivity() {
                 loadModel(modelMap[fabId] ?: return@setOnClickListener)
             }
         }
+
+        // Menambahkan listener untuk fab_control
+        findViewById<FloatingActionButton>(R.id.fab_control).setOnClickListener {
+            toggleFabsVisibility()
+        }
+    }
+
+    private fun toggleFabsVisibility() {
+        val fabList = listOf(
+            findViewById<FloatingActionButton>(R.id.fab_pc),
+            findViewById<FloatingActionButton>(R.id.fab_cpu),
+            findViewById<FloatingActionButton>(R.id.fab_gpu),
+            findViewById<FloatingActionButton>(R.id.fab_ram),
+            findViewById<FloatingActionButton>(R.id.fab_ssd),
+            findViewById<FloatingActionButton>(R.id.fab_motherboard),
+            findViewById<FloatingActionButton>(R.id.fab_cooler),
+            findViewById<FloatingActionButton>(R.id.fab_psu)
+        )
+
+        if (areFabsVisible) {
+            // Hide FABs
+            fabList.forEach { fab ->
+                fab.animate()
+                    .translationY(100f)
+                    .alpha(0f)
+                    .setDuration(300)
+                    .withEndAction {
+                        fab.visibility = View.GONE
+                    }
+            }
+            findViewById<FloatingActionButton>(R.id.fab_control).setImageResource(R.drawable.ic_arrow_down)
+        } else {
+            // Show FABs
+            fabList.forEachIndexed { index, fab ->
+                fab.visibility = View.VISIBLE
+                fab.alpha = 0f
+                fab.translationY = 100f
+                fab.animate()
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(300)
+                    .setStartDelay((index * 50).toLong())
+            }
+            findViewById<FloatingActionButton>(R.id.fab_control).setImageResource(R.drawable.ic_arrow_up)
+        }
+        areFabsVisible = !areFabsVisible
     }
 
     private fun loadModel(modelResourceId: Int) {
