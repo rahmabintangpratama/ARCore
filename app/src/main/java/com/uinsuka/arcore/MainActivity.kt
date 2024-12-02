@@ -81,20 +81,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleFabsVisibility() {
-        val fabList = listOf(
-            findViewById<FloatingActionButton>(R.id.fab_pc),
-            findViewById<FloatingActionButton>(R.id.fab_cpu),
-            findViewById<FloatingActionButton>(R.id.fab_gpu),
-            findViewById<FloatingActionButton>(R.id.fab_ram),
-            findViewById<FloatingActionButton>(R.id.fab_ssd),
-            findViewById<FloatingActionButton>(R.id.fab_motherboard),
+        val fabListShow = listOf(
+            findViewById<FloatingActionButton>(R.id.fab_psu),
             findViewById<FloatingActionButton>(R.id.fab_cooler),
-            findViewById<FloatingActionButton>(R.id.fab_psu)
+            findViewById<FloatingActionButton>(R.id.fab_motherboard),
+            findViewById<FloatingActionButton>(R.id.fab_ssd),
+            findViewById<FloatingActionButton>(R.id.fab_ram),
+            findViewById<FloatingActionButton>(R.id.fab_gpu),
+            findViewById<FloatingActionButton>(R.id.fab_cpu),
+            findViewById<FloatingActionButton>(R.id.fab_pc)
         )
+
+        val fabListHide = fabListShow.reversed()
 
         if (areFabsVisible) {
             // Hide FABs
-            fabList.forEach { fab ->
+            fabListHide.forEach { fab ->
                 fab.animate()
                     .translationY(100f)
                     .alpha(0f)
@@ -106,7 +108,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<FloatingActionButton>(R.id.fab_control).setImageResource(R.drawable.ic_arrow_down)
         } else {
             // Show FABs
-            fabList.forEachIndexed { index, fab ->
+            fabListShow.forEachIndexed { index, fab ->
                 fab.visibility = View.VISIBLE
                 fab.alpha = 0f
                 fab.translationY = 100f
